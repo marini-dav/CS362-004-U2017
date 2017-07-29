@@ -4,154 +4,120 @@
 #include <stdio.h>
 #include <assert.h>
 #include "rngs.h"
-#include <math.h>
 
-//Define some globals
-#define TESTEDCARD "adventurer"
-#define GAINED 1
-#define DRAW 2
-#define DISCARD 1
-#define NUM_TESTS 100
+int checkAdventurer(int drawnCoin, struct gameState *post, int players, int deckCount) {
+	//Make a game structure for before the tests (pre)
+	struct gameState pre;
+  	memcpy (&pre, post, sizeof(struct gameState));      
+	
+	int r, card;
+	r = adventurerFunct(post);  
 
-void printTorF(int condition, char *test, int *passed) {
-	//If the condition passed is true, print that the test passed
-	if (condition) {
-		printf("PASS: %s\n", test);
+	int tempHand[MAX_HAND];                              
+	//While we haven't added any treasure
+	while(drawnCoin < 2){
+		//If there are no cards in our deck, shuffle the discard, and then add it to the deck
+		if (pre.deckCount[players] < 1){                           
+			shuffle(players, &pre);
+		}
+		//Draw a card
+		drawCard(players, &pre);
+		//Set the card we are manipulating to the last drawn card
+		card = pre.hand[players][pre.handCount[players]-1];     
+		//If we drew a treasure card
+		if (card == copper || card == silver || card == gold){
+			//Increment the treasure drawn
+			drawnCoin++;
+		}
+		//Otherwise
+		else{
+			//Record the card we drew
+			tempHand[deckCount] = card;
+			//Remove the card from the hand
+			pre.handCount[players]--; 
+			//Increment which card we are drawing
+			deckCount++;
+		}
 	}
-	//If the condition passed is false, print that the test failed and that all the tests did not pass
-	else {
-		printf("FAIL: %s\n", test);
-		*passed = 0;
+	//While we have one or more cards in the discard pile
+	while(deckCount-1 >= 0){
+		//Discard all the cards that have been drawn that are in play
+		pre.discard[players][pre.discardCount[players]++] = tempHand[deckCount-1]; 
+		//Decrement deckCount
+		deckCount--;
 	}
-}
-
-int treasureCard(int card) {
-	//If the card is a type of coin
-	if (card == copper || card == silver || card == gold) {
-		//Return true
+	//If our adventureFunct doesn't return 0
+	if(r != 0){
+		//Print the test failed
+		printf("TEST FAILED: adventurerFunct() did not return correctly.\n");
 		return 1;
 	}
-	//Otherwise return false
-	else {
-		return 0;
+	//If the pre and post games are not the same
+	if(memcmp(&pre, post, sizeof(struct gameState)) != 0){
+		//Print the test failed
+		printf("TEST FAILED: Pre and Post games are different.\n");
+    return 1;
 	}
+	return 0;
 }
 
-void checkAdventurer(int player, struct gameState *post, int handPos, int *passed, int iterator) {
-	//Initialize a game
-	struct gameState game1;
-	memcpy(&game1, post, sizeof(struct gameState));
+int main () {
+	int x, t, n, r, d, f, deckCount, failed;
+	int c = rand() % 3;
 
-	int r, i, bonus = 0;
-	r = adventurerFunct(post);
-	//Print which test we are on
-	printf("Iteration #%d:\n", iterator + 1);
-
-	//Check that our adventurer card passes
-	printTorF(r == 0, "adventurerEffect(): returns correctly", passed);
-
-	//Check that the player gains one card
-	printTorF(post->handCount[player] == game1.handCount[player] + NET_GAINED, "Hand count is correct", passed);
-
-	//Set the drawn cards correctly
-	int cardDrawn = post->handCount[player] - game1.handCount[player] + DISCARD;
-
-	//Check to see that the deck was affected by the amount of cards drawn
-	printTorF(post->deckCount[player] + cardDrawn == game1.deckCount[player], "Deck count is correct", passed);
-
-	//Check that the amount of coins increased
-	//r = updateCoins(player, post, bonus);
-	//printTorF(r == 0, "updateCoins(): returns correctly", passed);
-	printTorF(post->coins > game1.coins, "Player gained coins correctly", passed);
-
-	//Check that cards added to hand are treasures
-	printTorF(treasureCard(post->hand[player][post->handCount[player] - 1]) && treasureCard(post->hand[player][post->handCount[player] - 2]) , "Player gained correct treasures", passed);
-
-	//Check that the correct amount of cards were played
-	printTorF(game->playedCardCount == game1.playedCardCount + DISCARD, "Played card count is correct", passed);
-
-	//Check that the last played card was adventurer
-	printTorF(game->playedCards[game->playedCardCount - 1] == TESTEDCARD, "Adventurer was last card played", passed);
-
-	//Create a copy of our game1
-	struct gameState copyGame;
-	memcpy(&copyGame, &game1, sizeof(struct gameState));
-	
-	//Copy all the changes from game to our copy of game
-	copyGame.handCount[player] = game->handCount[player];
-	copyGame.deckCount[player] = game->deckCount[player];
-	copyGame.playedCardCount = game->playedCardCount;
-	copyGame.discardCount[player] = game->discardCount[player];
-	copyGame.numActions = post->numActions;
-	copyGame.coins = post->coins;
-
-	//Copy the cards in the players deck
-	memcpy(copyGame.deck[player], game->deck[player], sizeof(int) * copyGame.deckCount[player]);
-	//Copy the cards in the players discard
-	memcpy(copyGame.discard[player], game->discard[player], sizeof(int) * copyGame.discardCount[player]);
-	//Copy the cards that the player played
-	memcpy(copyGame.playedCards, game->playedCards, sizeof(int) * copyGame.playedCardCount);
-	//For each of the players cards
-	for (i = 0; i < MAX_HAND; i++) {
-		//Copy the cards in the player's hand
-		copyGame.hand[player][i] = game->hand[player][i];
-	}
-	//Print if the game state has been changed
-	printTorF(memcmp(&copyGame, game, sizeof(struct gameState)) == 0, "Game state is overall correct", passed);
-
-	printf("\n");
-}
-
-int main() {
-	int i, n, p, handPos;
-	int passed = 1;
-	//Initialize the game
+	int k[10] = {adventurer, council_room, feast, gardens, mine, remodel, steward, village, baron, great_hall};
 	struct gameState game;
-	//Print that we are testing whatever card was set
-	printf("Random Testing: %s\n\n", TESTEDCARD);
-	//Sets current random number generator stream
-	SelectStream(5);
-	//Sets state of current random number generator
-	PutSeed(10);
-	//For all the tests
-	for (n = 0; n < NUM_TESTS; n++) {
-		//random byte for gamestate
-		for (i = 0; i < sizeof(struct gameState); i++) {
-			((char*)&game)[i] = floor(Random() * 256);
+	failed = 0;
+	printf ("Adventurer Card Tests:\n");
+	printf ("RANDOM TESTS:\n");
+	
+	//Overall tests this 300 times
+	for(x = 0; x < 3; x++){
+		for (d = 0; d < 2; d++) {
+			for (deckCount = 0; deckCount < 5; deckCount++) {
+				for (f = 0; f < 10; f++) {
+					//Set up the memory for the game
+					memset(&game, 23, sizeof(struct gameState)); 
+					//Initialize the game
+					r = initializeGame(2, k, 1, &game);
+					//Set the deck count to 1 through 5 depending on the loop
+					game.deckCount[d] = deckCount;
+					memset(game.deck[d], 0, sizeof(int) * deckCount);
+					for(t = 0; t < deckCount; t++){
+						//If c is equal to 0
+						if(c == 0){
+							//Set our deck equal to copper
+							game.deck[d][t] = copper;         
+						}
+						//If c is 1
+						else if(c == 1){
+							//Set our deck to silver
+							game.deck[d][t] = silver;         
+						}
+						//If c is 2
+						else if(c == 2){
+							//Set our deck to gold
+							game.deck[d][t] = gold;         
+						}
+					}
+					//Run our test function
+					n = checkAdventurer(0, &game, d, 0);
+					//If a test failed
+					if(n == 1){
+						//Print where the test failed
+						printf("TEST FAILED at Coins = %d, d = %d, deckCount = %d\n", c, d, deckCount);
+						//Set failed to true
+						failed = 1;
+					}
+				}
+			}
 		}
-		//Pick a random amount of players between 1 and 3
-		p = floor(Random() * 3);
-
-		//Randomize the amount in the deck
-		game.deckCount[p] = floor(Random() * MAX_DECK);
-
-		//Randomize the amount in the discard
-		game.discardCount[p] = floor(Random() * MAX_DECK);
-
-		//Randomize the amount in a players hand
-		game.handCount[p] = floor(Random() * MAX_HAND);
-
-		//Randomize the count of cards played
-		game.playedCardCount = floor(Random() * MAX_DECK);
-
-		//Randomize the number of cards played
-		game.playedCards[p] = floor(Random() * MAX_DECK);
-
-		//Randomize where the adventurer will be in the hand 
-		handPos = floor(Random() * game.handCount[p]);
-
-		//Put the adventurer in the hand at the random position
-		game.hand[p][handPos] = TESTEDCARD;
-		
-		//Randomize the amount of coins in the game
-		game.coins = floor(Random() * 100);
-		
-		//Call our test function
-		checkAdventurer(p, &game, handPos, &passed, n);
 	}
-	//If the tests passed
-	if (passed)
-		printf("All tests passed\n");
+	//If none of the tests failed
+	if(failed != 1){
+		//Print that the tests all passed
+		printf("Tests all passed succesfully.\n");
+	}
 
 	return 0;
 }
