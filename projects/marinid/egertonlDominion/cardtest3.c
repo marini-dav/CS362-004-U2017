@@ -1,6 +1,6 @@
 /*
 * David Marini
-* Test for smithy
+* Test for Great Hall
 */
 
 #include "dominion.h"
@@ -23,7 +23,7 @@ int main() {
 
 	struct gameState game;
 
-	printf("Testing our smithyFunct()\n");
+	printf("Testing our great_hallCard()\n");
 
 	//Clears our current game state
 	memset(&game, 23, sizeof(struct gameState));  
@@ -35,9 +35,9 @@ int main() {
 	game.handCount[0] = fullHand;
 	//For each card in the hand loop through
 	for (n = 0; n <= fullHand - 1; n++) {
-		//Make the first card a smithy (card to test)
+		//Make the first card a great hall (card to test)
 		if (n == 0) {
-			game.hand[0][n] = smithy;      
+			game.hand[0][n] = great_hall;      
 		}
 		else {
 			//Make the rest of the hand copper
@@ -50,6 +50,7 @@ int main() {
 	}
 	int curHand1 = game.handCount[0];
 	int curDeck1 = game.deckCount[0];
+	int curAction = game.numActions;
 
 	//Set the second players hand to a full hand
 	game.handCount[1] = fullHand; 
@@ -63,7 +64,7 @@ int main() {
 		game.deck[1][n] = gold;                        
 	}
 	int curHand2 = game.handCount[1];
-	int curDiscard = game.discardCount[1];
+	int curDiscard2 = game.discardCount[1];
 	int curDeck2 = game.deckCount[1];
 
 	//Save our deck supply
@@ -71,22 +72,32 @@ int main() {
 		origDeck[i] = supplyCount(i, &game);
 	}
 
-	//Test to see if the proper amount of cards were received for playing the smithy card
-	smithyFunct(&game, playerAmt, 0);                        
-	int playedSmithy = game.handCount[0];
-	//If playing our Smithy card returns anything but + 3 to our hand
-	if (playedSmithy != (curHand1 + 3)) {
+	//Test the great hall card
+	great_hallCard(&game, 0, 0);                        
+	
+	int playedgreat_hall = game.handCount[0];
+	//If playing our great hall ends up with the incorrect amount of cards
+	if (playedgreat_hall != curHand1) {
 		//Print that the test failed
-		printf("FAILED: Player that played Smithy did not draw the correct amount of cards to hand\n");
+		printf("FAILED: Player that played Great Hall did not end up with the correct amount of cards in hand\n");
 		failed = 1;
 	}
 
-	//Test to see where the drawn cards came from
-	int drawn3 = game.deckCount[0];
+	//If playing our great hall ends up with the incorrect amount of drawn cards
+	int deckDraw = game.deckCount[0];
+	//If we didnt draw a card
+	if (deckDraw != (curDeck1 - 1)) {
+		//Print that the test failed
+		printf("FAILED: Player that played Great Hall did not draw the correct number of cards\n");
+		failed = 1;
+	}
+
+	//Test to see if discard pile is larger than when adventurer was played
+	int anotherAction = game.numActions;
 	//If the deck has anything but - 3 from it when smithy is played
-	if (drawn3 != (curDeck1 - 3)) {
+	if (anotherAction != (curAction + 1)) {
 		//Print that test failed
-		printf("FAILED: Player that played Smithy did not draw 3 cards from their deck\n");
+		printf("FAILED: Player that played Adventurer did not discard any cards\n");
 		failed = 1;
 	}
 
@@ -97,19 +108,19 @@ int main() {
 	//If the copy of the hand is not the same as the hand they drew
 	if (copyHand != curHand2) {
 		//Print that the test failed
-		printf("FAILED: Other players do not have the same cards in hand after Smithy is played\n");
+		printf("FAILED: Other players do not have the same cards in hand after Great Hall is played\n");
 		failed = 1;
 	}
 	//If the copy of the discard pile is not the same
-	if (copyDiscard != curDiscard) {
+	if (copyDiscard != curDiscard2) {
 		//Print that the test failed
-		printf("FAILED: Other players do not have the same cards in discard after Smithy is played\n");
+		printf("FAILED: Other players do not have the same cards in discard after Great Hall is played\n");
 		failed = 1;
 	}
 	//If the copy of the deck is not the same
 	if (copyDeck != curDeck2) {
 		//Print that the test failed
-		printf("FAILED: Other players do not have the same cards in deck after Smithy is played\n");
+		printf("FAILED: Other players do not have the same cards in deck after Great Hall is played\n");
 		failed = 1;
 	}
 
@@ -122,13 +133,13 @@ int main() {
 		//If they are not the same
 		if (origDeck[i] != deckCheck[i]) {
 			//Print that test failed
-			printf("FAILED: The supply deck was changed by smithyFunct\n");
+			printf("FAILED: The supply deck was changed by great_hallCard\n");
 			failed = 1;
 		}
 	}
 	//If no test failed
 	if (failed != 1) {
-		printf("smithyFunct works as it should\n");
+		printf("adventurerFunct works as it should\n");
 	}
 
 	return 0;

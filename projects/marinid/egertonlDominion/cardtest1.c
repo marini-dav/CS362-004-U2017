@@ -23,7 +23,7 @@ int main() {
 
 	struct gameState game;
 
-	printf("Testing our smithyFunct()\n");
+	printf("Testing our smithyCard()\n");
 
 	//Clears our current game state
 	memset(&game, 23, sizeof(struct gameState));  
@@ -72,7 +72,7 @@ int main() {
 	}
 
 	//Test to see if the proper amount of cards were received for playing the smithy card
-	smithyFunct(&game, playerAmt, 0);                        
+	smithyCard(&game, playerAmt, 0);                        
 	int playedSmithy = game.handCount[0];
 	//If playing our Smithy card returns anything but + 3 to our hand
 	if (playedSmithy != (curHand1 + 3)) {
@@ -122,13 +122,13 @@ int main() {
 		//If they are not the same
 		if (origDeck[i] != deckCheck[i]) {
 			//Print that test failed
-			printf("FAILED: The supply deck was changed by smithyFunct\n");
+			printf("FAILED: The supply deck was changed by smithyCard\n");
 			failed = 1;
 		}
 	}
 	//If no test failed
 	if (failed != 1) {
-		printf("smithyFunct works as it should\n");
+		printf("smithyCard works as it should\n");
 	}
 
 	return 0;
